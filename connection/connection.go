@@ -1,27 +1,28 @@
-package main
+package dbConnection
 
 import (
-	"log"
+	"database/sql"
+	"fmt"
 
-	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq"
 )
 
-func main() {
-	//connect to a PostgreSQL database
-	// Replace the connection details (user, dbname, password, host) with your own
-	db, err := sqlx.Connect("postgres", "user=postgres dbname=GoDB sslmode=disable password=Qweqwe@1111 host=localhost")
+var DB *sql.DB
+
+func ConnectDB() {
+	var err error
+
+	connStr := "postgres://postgres:Qweqwe@1111@localhost/GoDB?sslmode=disable"
+	DB, err = sql.Open("postgres", connStr)
+
 	if err != nil {
-		log.Fatalln(err)
+		panic(err)
 	}
 
-	defer db.Close()
-
-	// Test the connection to the database
-	if err := db.Ping(); err != nil {
-		log.Fatal(err)
-	} else {
-		log.Println("Successfully Connected")
+	if err = DB.Ping(); err != nil {
+		panic(err)
 	}
+
+	fmt.Println("The database is connected")
 
 }
