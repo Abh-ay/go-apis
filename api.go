@@ -3,6 +3,7 @@ package main
 import (
 	loginHandler "go-apis/Handler"
 	middleware "go-apis/Middleware"
+	util "go-apis/Util"
 	dbConnection "go-apis/connection"
 
 	"github.com/gin-gonic/gin"
@@ -15,6 +16,7 @@ func main() {
 	{
 		publicRoutes.POST("/login", loginHandler.Login)
 		publicRoutes.POST("/register", loginHandler.Register)
+		publicRoutes.GET("/getkeys", util.KeyWrite)
 	}
 	protectedRoutes := r.Group("/protected")
 	protectedRoutes.Use(middleware.AuthenticationMiddleware())

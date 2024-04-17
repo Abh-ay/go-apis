@@ -19,14 +19,23 @@ func Login(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid data"})
 		return
 	}
-
-	// Need to check password is correct or not
-
+	defer c.Request.Body.Close()
+	var userPass = user.Password
 	err := dbConnection.DB.QueryRow("select * from RefUser Where username=$1", user.Username).Scan(&user.RefUserId, &user.Username, &user.Password, &user.Is_Admin)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error while connection established to DB"})
+		if err == sql.ErrNoRows {
+			c.JSON(http.StatusOK, gin.H{"message": "Please provide valid username or password"})
+			return
+		} else {
+			c.JSON(http.StatusInternalServerError, gin.H{"message": "Error while execute query from username is already exist or not"})
+			return
+		}
 	}
 	userId = user.RefUserId
+	if !util.VerifyPassword([]byte(user.Password), []byte(userPass)) {
+		c.JSON(http.StatusOK, gin.H{"error": "Password is incorrect"})
+		return
+	}
 	tokenString, err := util.CreateToken(userId)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error while CreateToken"})
@@ -66,6 +75,7 @@ createToken:
 	}
 	user.Token = tokenString
 	//Need to add encypt password
+	user.Password = string(util.EncryptPassword(user.Password))
 	fmt.Println(user.Password)
 
 	insertStmt := `insert into RefUser ("username", "userpassword","isadmin") values($1, $2, $3)`
@@ -76,7 +86,6 @@ createToken:
 	}
 	_, fail := res.RowsAffected()
 	if fail != nil {
-		fmt.Println(fail)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error while Insert query for new user"})
 		return
 	} else {
